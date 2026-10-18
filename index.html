@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scanrepo · a small press for a git commit</title>
+<meta name="description" content="Write the files, print a booklet, scan it back into the same git tree. Scanrepo format v1 (1.1) in the browser: git blob, tree and commit ids recomputed from paper.">
+<link rel="icon" href="assets/icon.svg">
+<link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+<header class="top noprint">
+  <div class="brand"><img src="assets/icon.svg" width="34" height="34" alt=""><div><h1>Scanrepo</h1><p>A small press for a git commit.</p></div></div>
+  <nav class="tabs" role="tablist">
+    <button data-tab="directions" class="on">Directions</button><button data-tab="compose">Compose</button><button data-tab="booklet">Booklet</button><button data-tab="restore">Restore</button><button data-tab="shelf">Shelf <span id="nshelf"></span></button>
+  </nav>
+</header>
+<main>
+<section id="directions" class="tab on noprint prose">
+  <h2>How the press works</h2>
+  <p>One edition is one commit. You write the files, seal them into a booklet (a cover plus one page per chunk of source, each with a QR code holding the same bytes), print it, and later scan it back. Scanrepo rehashes every file the git way and rebuilds the tree and the commit. If the ids match the cover, the paper <em>is</em> the commit.</p>
+  <ol class="steps">
+    <li><h3>Compose</h3><p>Set the <b>repo</b> name, <b>edition</b> (1 for the first printing), <b>branch</b>, and <b>parent</b> (the previous edition's commit, or <code>none</code>). Write the <b>message</b>, <b>author</b> and <b>time</b>: these go on the cover so the commit id can be recomputed. Add files by typing or uploading text files. Each path is a normal file (<code>100644</code>), executable (<code>100755</code>) or symlink (<code>120000</code>, the text is the target). Folders are just <code>/</code> in the path. Files print in git's byte order of paths. A long file splits into page-sized chunks (at most 1800 bytes and 72 lines a page, split at line ends).</p></li>
+    <li><h3>Seal and print</h3><p><b>Seal</b> hashes blobs, tree and commit and lays out the booklet. The cover carries repo, edition, branch, commit, tree, parent, author and message, plus the cover code (<code>C|scanrepo1|…</code>). Every page carries its source and a page code (<code>P|scanrepo1|…</code>). <b>Print</b> sends it to paper (print at 100%). <b>Master</b> downloads the <code>.scanrepo</code> file, the digital twin. <b>Keep</b> puts the edition on the shelf in this browser. <b>Test the codes</b> decodes every printed QR on screen and restores from them.</p></li>
+    <li><h3>Photograph</h3><p>Photograph every page, <b>cover included</b>. Don't crop the codes; shoot them flat and sharp. In <b>Restore</b> use the camera/photos button (codes are decoded on your device), or paste payloads by hand: one per code, separated by a line with just <code>---</code>. A whole master pasted or uploaded works too. Order doesn't matter and duplicates are fine.</p></li>
+    <li><h3>The report</h3><p><b>Sealed</b>: every blob, the tree and the commit recomputed and match the cover. <b>Held</b>: blobs and tree match, but the printing has no author, time or message, so the exact commit id cannot be recomputed. The sample <code>paper-git</code> edition 1 stays Held for that reason. Anything sealed in this app round-trips as Sealed. <b>Rejected</b>: something does not match (a typo, a missing chunk, a code from a different edition); the report says what. <b>Unread</b>: the cover or some pages were not scanned yet; the report lists which.</p></li>
+    <li><h3>The next edition</h3><p><b>New edition</b> bumps the edition and sets the parent to this commit. A new printing never overwrites the old one: the shelf is the history. To move to another device, download the <b>Master</b> and restore it there, or scan the booklet.</p></li>
+  </ol>
+  <h3>What doesn't belong on the page</h3>
+  <p>Deltas and packfiles (each page holds full text), binaries (anything with a NUL byte or invalid UTF-8), overlong lines (they split mid-line and are hard to read), and huge files (they chunk into many pages). A 50 KB text repo is a thin booklet; a photo-heavy repo is the wrong thing to print.</p>
+  <p class="muted">Format: <code>scanrepo</code> v1 / 1.1, the same as <a href="https://github.com/fitzyracing1/scanrepo-action">fitzyracing1/scanrepo-action</a>. Masters from either side restore on the other.</p>
+  <p><button class="btn" data-go="compose">Start composing →</button></p>
+</section>
+
+<section id="compose" class="tab noprint">
+  <div class="grid2">
+    <div class="card">
+      <h2>Edition</h2>
+      <div class="form">
+        <label>Repo<input id="repo"></label>
+        <label>Edition<input id="edition" type="number" min="1"></label>
+        <label>Branch<input id="branch"></label>
+        <label class="wide">Parent<input id="parent" placeholder="none or a 40-hex commit id"></label>
+        <label class="wide">Message<textarea id="message" rows="2"></textarea></label>
+        <label>Author<input id="aname"></label>
+        <label>Email<input id="aemail"></label>
+        <label>Time<input id="atime" type="datetime-local" step="1"></label>
+        <label>Zone<input id="atz" placeholder="+0000"></label>
+      </div>
+      <div class="row"><button id="seal" class="btn primary">Seal edition</button><button id="newEd" class="btn ghost">New edition</button><button id="loadSample" class="btn ghost">Load paper-git sample</button></div>
+      <p id="composeErr" class="err"></p>
+    </div>
+    <div class="card">
+      <div class="row"><h2 style="margin:0">Files</h2><span class="grow"></span><label class="btn ghost">Upload text files<input id="upload" type="file" multiple hidden></label><button id="addFile" class="btn ghost">+ File</button></div>
+      <div id="files" class="files"></div>
+    </div>
+  </div>
+</section>
+
+<section id="booklet" class="tab">
+  <div class="row noprint bar"><span id="bookInfo" class="muted"></span><span class="grow"></span><button id="testCodes" class="btn ghost">Test the codes</button><button id="keep" class="btn ghost">Keep</button><button id="master" class="btn ghost">Master</button><button id="print" class="btn primary">Print</button></div>
+  <p id="testOut" class="noprint"></p>
+  <div id="pages" class="pages"></div>
+</section>
+
+<section id="restore" class="tab noprint">
+  <div class="grid2">
+    <div class="card">
+      <h2>Scan back</h2>
+      <p class="muted">Photos of the pages (cover included), a <code>.scanrepo</code> master, or pasted payloads separated by <code>---</code> lines.</p>
+      <div class="row"><label class="btn">📷 Camera / photos<input id="photos" type="file" accept="image/*" capture="environment" multiple hidden></label><label class="btn ghost">Open master<input id="openMaster" type="file" accept=".scanrepo,text/plain" hidden></label><button id="clearPaste" class="btn ghost">Clear</button></div>
+      <textarea id="paste" rows="16" spellcheck="false" placeholder="C|scanrepo1|<commit>|1/1&#10;# scanrepo v1&#10;…&#10;---&#10;P|scanrepo1|<commit>|1/2&#10;## PAGE 1&#10;…"></textarea>
+      <div class="row"><button id="check" class="btn primary">Check</button><span id="decoded" class="muted"></span></div>
+    </div>
+    <div class="card"><h2>Report</h2><div id="report" class="muted">Nothing checked yet.</div></div>
+  </div>
+</section>
+
+<section id="shelf" class="tab noprint"><div class="card"><h2>Shelf</h2><p class="muted">Editions kept in this browser. The shelf is the history.</p><div id="shelfList"></div></div></section>
+</main>
+<script src="vendor/qrcode.js"></script>
+<script src="vendor/jsQR.js"></script>
+<script type="module" src="src/app.js"></script>
+</body>
+</html>
