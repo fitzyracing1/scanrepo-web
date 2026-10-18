@@ -4,6 +4,6 @@
   "description": "Scanrepo: a small press for a git commit. Compose files, print a booklet with QR codes, scan it back and recompute blob, tree and commit ids. scanrepo format v1/1.1 in the browser.",
   "type": "module",
   "license": "MIT",
-  "scripts": { "test": "node --test test/", "start": "python3 -m http.server 8080" },
+  "scripts": { "test": "node --test test/*.test.js", "start": "python3 -m http.server 8080" },
   "engines": { "node": ">=18" }
 }
