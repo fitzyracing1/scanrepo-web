@@ -1,5 +1,7 @@
 # Scanrepo (web)
 
+**Live:** https://fitzyracing1.github.io/scanrepo-web/ · **Repo:** https://github.com/fitzyracing1/scanrepo-web
+
 **A small press for a git commit.** Write the files, print a booklet, and scan it back into the same tree. Every file is rehashed the git way (`blob <len>\0` + bytes), then the tree and the commit are recomputed and compared with the cover.
 
 ![Booklet with on-screen code test: Sealed](docs/screenshot.png)
