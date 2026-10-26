@@ -45,3 +45,11 @@ Built from Joshua Almeida's Grok chat "Build web app from evidence" (https://gro
 ## License
 
 MIT, see [LICENSE](LICENSE). Vendored: `vendor/qrcode.js` (qrcode-generator, MIT, © Kazuhiko Arase), `vendor/jsQR.js` (jsQR, Apache-2.0, © Cosmo Wolfe).
+
+## Plans
+
+This project is free, and its license stays as is. Support it through [GitHub Sponsors](https://github.com/sponsors/fitzyracing1):
+
+- **Free**: use the code, community support.
+- **Pro ($49/month)**: priority issues and support.
+- **Team ($199/month)**: priority support for your team plus early access.
